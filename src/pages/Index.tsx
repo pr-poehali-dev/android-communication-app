@@ -34,6 +34,17 @@ interface Story {
   isViewed: boolean;
 }
 
+interface Group {
+  id: number;
+  name: string;
+  avatar: string;
+  description: string;
+  members: number;
+  lastMessage: string;
+  time: string;
+  unread: number;
+}
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts' | 'groups' | 'profile'>('chats');
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
@@ -57,6 +68,14 @@ const Index = () => {
     { id: 3, name: 'Дмитрий', avatar: '🎮', hasStory: true, isViewed: true },
     { id: 4, name: 'Анна', avatar: '📸', hasStory: true, isViewed: true },
     { id: 5, name: 'Команда', avatar: '💻', hasStory: true, isViewed: false },
+  ];
+
+  const groups: Group[] = [
+    { id: 1, name: 'Команда Разработки', avatar: '💻', description: 'Обсуждение проектов', members: 12, lastMessage: 'Созвон в 15:00', time: '12:48', unread: 5 },
+    { id: 2, name: 'Друзья', avatar: '🎉', description: 'Чат с друзьями', members: 8, lastMessage: 'Кто на выходных?', time: '11:30', unread: 2 },
+    { id: 3, name: 'Design Community', avatar: '🎨', description: 'Дизайнеры и креатив', members: 45, lastMessage: 'Посмотрите мой мокап', time: 'Вчера', unread: 0 },
+    { id: 4, name: 'Семья', avatar: '❤️', description: 'Семейный чат', members: 5, lastMessage: 'Ужин готов!', time: 'Вчера', unread: 0 },
+    { id: 5, name: 'Геймеры', avatar: '🎮', description: 'Игровые сессии', members: 15, lastMessage: 'Кто в Dota?', time: '2 дня назад', unread: 0 },
   ];
 
   const messages: Message[] = [
@@ -94,6 +113,82 @@ const Index = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const renderGroupsList = () => (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Группы
+          </h1>
+          <Button size="icon" variant="ghost" className="hover-scale">
+            <Icon name="Plus" size={24} />
+          </Button>
+        </div>
+        <div className="relative">
+          <Icon name="Search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input 
+            placeholder="Поиск групп..." 
+            className="pl-10 bg-muted/50 border-0 focus-visible:ring-1"
+          />
+        </div>
+      </div>
+      
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          {groups.map((group, index) => (
+            <div
+              key={group.id}
+              className="
+                p-4 rounded-xl cursor-pointer transition-all duration-200
+                hover:bg-muted/50 hover-scale mb-2 animate-slide-in-up
+                border border-border/50
+              "
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="flex items-start gap-3">
+                <Avatar className="h-14 w-14 border-2 border-primary/20">
+                  <AvatarFallback className="text-2xl bg-gradient-to-br from-primary/20 to-secondary/20">
+                    {group.avatar}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold truncate">{group.name}</h3>
+                    <span className="text-xs text-muted-foreground ml-2">{group.time}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">{group.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Icon name="Users" size={14} />
+                      <span>{group.members} участников</span>
+                    </div>
+                    {group.unread > 0 && (
+                      <Badge className="bg-gradient-to-r from-primary to-secondary border-0 animate-scale-in">
+                        {group.unread}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground truncate mt-1">{group.lastMessage}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          <div className="p-4 mt-4">
+            <Button 
+              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover-scale"
+              size="lg"
+            >
+              <Icon name="Plus" size={20} className="mr-2" />
+              Создать новую группу
+            </Button>
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
 
   const renderChatsList = () => (
     <div className="flex flex-col h-full">
@@ -440,7 +535,20 @@ const Index = () => {
         w-full lg:w-96 border-r border-border
         ${selectedChat ? 'hidden lg:block' : 'block'}
       `}>
-        {renderChatsList()}
+        {activeTab === 'chats' && renderChatsList()}
+        {activeTab === 'groups' && renderGroupsList()}
+        {activeTab === 'contacts' && (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
+            <Icon name="Users" size={64} className="mb-4 opacity-20" />
+            <p className="text-lg text-center">Контакты в разработке</p>
+          </div>
+        )}
+        {activeTab === 'profile' && (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
+            <Icon name="User" size={64} className="mb-4 opacity-20" />
+            <p className="text-lg text-center">Профиль в разработке</p>
+          </div>
+        )}
       </div>
 
       <div className={`
