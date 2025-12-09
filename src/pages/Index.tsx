@@ -18,10 +18,12 @@ interface Chat {
 
 interface Message {
   id: number;
-  text: string;
+  text?: string;
   time: string;
   isMine: boolean;
   status?: 'sent' | 'delivered' | 'read';
+  type?: 'text' | 'voice';
+  voiceDuration?: string;
 }
 
 interface Story {
@@ -37,6 +39,8 @@ const Index = () => {
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [messageText, setMessageText] = useState('');
   const [showStories, setShowStories] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
 
   const chats: Chat[] = [
     { id: 1, name: 'Алекс Петров', avatar: '👨‍💻', lastMessage: 'Отлично! Увидимся завтра', time: '14:32', unread: 2, online: true },
@@ -56,17 +60,39 @@ const Index = () => {
   ];
 
   const messages: Message[] = [
-    { id: 1, text: 'Привет! Как дела?', time: '14:28', isMine: false },
-    { id: 2, text: 'Отлично! Работаю над новым проектом 🚀', time: '14:30', isMine: true, status: 'read' },
-    { id: 3, text: 'Круто! Расскажешь подробнее?', time: '14:31', isMine: false },
-    { id: 4, text: 'Конечно! Делаю мессенджер с крутым дизайном', time: '14:31', isMine: true, status: 'read' },
-    { id: 5, text: 'Отлично! Увидимся завтра', time: '14:32', isMine: false },
+    { id: 1, text: 'Привет! Как дела?', time: '14:28', isMine: false, type: 'text' },
+    { id: 2, text: 'Отлично! Работаю над новым проектом 🚀', time: '14:30', isMine: true, status: 'read', type: 'text' },
+    { id: 3, time: '14:30', isMine: false, type: 'voice', voiceDuration: '0:15' },
+    { id: 4, text: 'Круто! Расскажешь подробнее?', time: '14:31', isMine: false, type: 'text' },
+    { id: 5, time: '14:31', isMine: true, status: 'read', type: 'voice', voiceDuration: '0:23' },
+    { id: 6, text: 'Конечно! Делаю мессенджер с крутым дизайном', time: '14:31', isMine: true, status: 'read', type: 'text' },
+    { id: 7, text: 'Отлично! Увидимся завтра', time: '14:32', isMine: false, type: 'text' },
   ];
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
       setMessageText('');
     }
+  };
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setRecordingTime(0);
+    const interval = setInterval(() => {
+      setRecordingTime(prev => prev + 1);
+    }, 1000);
+    return interval;
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    setRecordingTime(0);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const renderChatsList = () => (
@@ -238,61 +264,171 @@ const Index = () => {
                 className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'} animate-slide-in-up`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div
-                  className={`
-                    max-w-[70%] rounded-2xl px-4 py-2 
-                    ${msg.isMine 
-                      ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-br-sm' 
-                      : 'bg-muted text-foreground rounded-bl-sm'
-                    }
-                  `}
-                >
-                  <p className="text-sm break-words">{msg.text}</p>
-                  <div className={`flex items-center gap-1 justify-end mt-1 ${msg.isMine ? 'opacity-80' : 'opacity-60'}`}>
-                    <span className="text-xs">{msg.time}</span>
-                    {msg.isMine && (
-                      <Icon 
-                        name={msg.status === 'read' ? 'CheckCheck' : 'Check'} 
-                        size={14}
-                        className={msg.status === 'read' ? 'text-accent' : ''}
-                      />
-                    )}
+                {msg.type === 'voice' ? (
+                  <div
+                    className={`
+                      flex items-center gap-3 rounded-2xl px-4 py-2 min-w-[200px]
+                      ${msg.isMine 
+                        ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-br-sm' 
+                        : 'bg-muted text-foreground rounded-bl-sm'
+                      }
+                    `}
+                  >
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className={`h-8 w-8 rounded-full hover-scale ${msg.isMine ? 'bg-white/20 hover:bg-white/30' : 'bg-primary/20 hover:bg-primary/30'}`}
+                    >
+                      <Icon name="Play" size={16} />
+                    </Button>
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                          <div className="h-full bg-white/60 rounded-full" style={{ width: '40%' }} />
+                        </div>
+                      </div>
+                      <div className={`flex items-center justify-between text-xs ${msg.isMine ? 'opacity-80' : 'opacity-60'}`}>
+                        <span>{msg.voiceDuration}</span>
+                        <div className="flex items-center gap-1">
+                          <span>{msg.time}</span>
+                          {msg.isMine && (
+                            <Icon 
+                              name={msg.status === 'read' ? 'CheckCheck' : 'Check'} 
+                              size={14}
+                              className={msg.status === 'read' ? 'text-accent' : ''}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div
+                    className={`
+                      max-w-[70%] rounded-2xl px-4 py-2 
+                      ${msg.isMine 
+                        ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-br-sm' 
+                        : 'bg-muted text-foreground rounded-bl-sm'
+                      }
+                    `}
+                  >
+                    <p className="text-sm break-words">{msg.text}</p>
+                    <div className={`flex items-center gap-1 justify-end mt-1 ${msg.isMine ? 'opacity-80' : 'opacity-60'}`}>
+                      <span className="text-xs">{msg.time}</span>
+                      {msg.isMine && (
+                        <Icon 
+                          name={msg.status === 'read' ? 'CheckCheck' : 'Check'} 
+                          size={14}
+                          className={msg.status === 'read' ? 'text-accent' : ''}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </ScrollArea>
 
         <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <Button size="icon" variant="ghost" className="hover-scale">
-              <Icon name="Paperclip" size={20} />
-            </Button>
-            
-            <div className="flex-1 relative">
-              <Input
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Введите сообщение..."
-                className="pr-20 bg-muted/50 border-0 focus-visible:ring-1"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                <Button size="icon" variant="ghost" className="h-8 w-8 hover-scale">
-                  <Icon name="Smile" size={18} />
-                </Button>
+          {isRecording ? (
+            <div className="flex items-center gap-3 animate-fade-in">
+              <Button 
+                size="icon" 
+                variant="ghost"
+                className="hover-scale text-destructive"
+                onClick={handleStopRecording}
+              >
+                <Icon name="X" size={24} />
+              </Button>
+              
+              <div className="flex-1 flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                  <span className="text-sm font-mono">{formatTime(recordingTime)}</span>
+                </div>
+                <div className="flex-1 flex gap-1 items-center">
+                  {[...Array(20)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="flex-1 bg-primary/30 rounded-full animate-pulse"
+                      style={{ 
+                        height: `${Math.random() * 20 + 10}px`,
+                        animationDelay: `${i * 50}ms`
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
+              
+              <Button 
+                size="icon" 
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover-scale"
+                onClick={handleStopRecording}
+              >
+                <Icon name="Send" size={20} />
+              </Button>
             </div>
-            
-            <Button 
-              size="icon" 
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover-scale"
-              onClick={handleSendMessage}
-            >
-              <Icon name="Send" size={20} />
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button size="icon" variant="ghost" className="hover-scale">
+                <Icon name="Paperclip" size={20} />
+              </Button>
+              
+              {messageText.trim() ? (
+                <>
+                  <div className="flex-1 relative">
+                    <Input
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      placeholder="Введите сообщение..."
+                      className="pr-20 bg-muted/50 border-0 focus-visible:ring-1"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 hover-scale">
+                        <Icon name="Smile" size={18} />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    size="icon" 
+                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover-scale"
+                    onClick={handleSendMessage}
+                  >
+                    <Icon name="Send" size={20} />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex-1 relative">
+                    <Input
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      placeholder="Введите сообщение..."
+                      className="pr-20 bg-muted/50 border-0 focus-visible:ring-1"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 hover-scale">
+                        <Icon name="Smile" size={18} />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    size="icon" 
+                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover-scale"
+                    onMouseDown={handleStartRecording}
+                    onTouchStart={handleStartRecording}
+                  >
+                    <Icon name="Mic" size={20} />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
