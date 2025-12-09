@@ -24,10 +24,19 @@ interface Message {
   status?: 'sent' | 'delivered' | 'read';
 }
 
+interface Story {
+  id: number;
+  name: string;
+  avatar: string;
+  hasStory: boolean;
+  isViewed: boolean;
+}
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts' | 'groups' | 'profile'>('chats');
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [messageText, setMessageText] = useState('');
+  const [showStories, setShowStories] = useState(true);
 
   const chats: Chat[] = [
     { id: 1, name: 'Алекс Петров', avatar: '👨‍💻', lastMessage: 'Отлично! Увидимся завтра', time: '14:32', unread: 2, online: true },
@@ -35,6 +44,15 @@ const Index = () => {
     { id: 3, name: 'Команда Разработки', avatar: '💻', lastMessage: 'Созвон в 15:00', time: '12:48', unread: 5, online: false },
     { id: 4, name: 'Дмитрий Волков', avatar: '🎮', lastMessage: 'Поиграем вечером?', time: '11:20', unread: 1, online: false },
     { id: 5, name: 'Анна Смирнова', avatar: '📸', lastMessage: 'Посмотри фото с отпуска', time: 'Вчера', unread: 0, online: true },
+  ];
+
+  const stories: Story[] = [
+    { id: 0, name: 'Ваш статус', avatar: '📸', hasStory: false, isViewed: false },
+    { id: 1, name: 'Алекс', avatar: '👨‍💻', hasStory: true, isViewed: false },
+    { id: 2, name: 'Мария', avatar: '👩‍🎨', hasStory: true, isViewed: false },
+    { id: 3, name: 'Дмитрий', avatar: '🎮', hasStory: true, isViewed: true },
+    { id: 4, name: 'Анна', avatar: '📸', hasStory: true, isViewed: true },
+    { id: 5, name: 'Команда', avatar: '💻', hasStory: true, isViewed: false },
   ];
 
   const messages: Message[] = [
@@ -70,6 +88,53 @@ const Index = () => {
           />
         </div>
       </div>
+      
+      {showStories && (
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground">СТАТУСЫ</h2>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-6 w-6 hover-scale"
+              onClick={() => setShowStories(false)}
+            >
+              <Icon name="X" size={16} />
+            </Button>
+          </div>
+          <ScrollArea className="w-full">
+            <div className="flex gap-3 pb-2">
+              {stories.map((story, index) => (
+                <div
+                  key={story.id}
+                  className="flex flex-col items-center gap-1 cursor-pointer hover-scale animate-scale-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className={`relative ${
+                    story.id === 0 
+                      ? 'ring-2 ring-dashed ring-muted-foreground' 
+                      : story.hasStory && !story.isViewed
+                        ? 'ring-2 ring-primary'
+                        : story.hasStory && story.isViewed
+                          ? 'ring-2 ring-muted'
+                          : ''
+                  } rounded-full p-0.5`}>
+                    <Avatar className="h-14 w-14">
+                      <AvatarFallback className="text-2xl bg-muted">{story.avatar}</AvatarFallback>
+                    </Avatar>
+                    {story.id === 0 && (
+                      <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1">
+                        <Icon name="Plus" size={12} className="text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-center max-w-[60px] truncate">{story.name}</span>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
       
       <ScrollArea className="flex-1">
         <div className="p-2">
