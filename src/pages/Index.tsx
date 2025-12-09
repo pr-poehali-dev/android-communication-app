@@ -22,8 +22,12 @@ interface Message {
   time: string;
   isMine: boolean;
   status?: 'sent' | 'delivered' | 'read';
-  type?: 'text' | 'voice';
+  type?: 'text' | 'voice' | 'image' | 'file';
   voiceDuration?: string;
+  imageUrl?: string;
+  fileName?: string;
+  fileSize?: string;
+  fileIcon?: string;
 }
 
 interface Story {
@@ -52,6 +56,7 @@ const Index = () => {
   const [showStories, setShowStories] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
 
   const chats: Chat[] = [
     { id: 1, name: 'Алекс Петров', avatar: '👨‍💻', lastMessage: 'Отлично! Увидимся завтра', time: '14:32', unread: 2, online: true },
@@ -82,10 +87,12 @@ const Index = () => {
     { id: 1, text: 'Привет! Как дела?', time: '14:28', isMine: false, type: 'text' },
     { id: 2, text: 'Отлично! Работаю над новым проектом 🚀', time: '14:30', isMine: true, status: 'read', type: 'text' },
     { id: 3, time: '14:30', isMine: false, type: 'voice', voiceDuration: '0:15' },
-    { id: 4, text: 'Круто! Расскажешь подробнее?', time: '14:31', isMine: false, type: 'text' },
-    { id: 5, time: '14:31', isMine: true, status: 'read', type: 'voice', voiceDuration: '0:23' },
-    { id: 6, text: 'Конечно! Делаю мессенджер с крутым дизайном', time: '14:31', isMine: true, status: 'read', type: 'text' },
-    { id: 7, text: 'Отлично! Увидимся завтра', time: '14:32', isMine: false, type: 'text' },
+    { id: 4, time: '14:31', isMine: true, status: 'read', type: 'image', imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800' },
+    { id: 5, text: 'Круто! Расскажешь подробнее?', time: '14:31', isMine: false, type: 'text' },
+    { id: 6, time: '14:31', isMine: true, status: 'read', type: 'voice', voiceDuration: '0:23' },
+    { id: 7, time: '14:32', isMine: false, type: 'file', fileName: 'presentation.pdf', fileSize: '2.4 MB', fileIcon: 'FileText' },
+    { id: 8, text: 'Конечно! Делаю мессенджер с крутым дизайном', time: '14:32', isMine: true, status: 'read', type: 'text' },
+    { id: 9, text: 'Отлично! Увидимся завтра', time: '14:32', isMine: false, type: 'text' },
   ];
 
   const handleSendMessage = () => {
@@ -397,6 +404,57 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
+                ) : msg.type === 'image' ? (
+                  <div className={`max-w-[70%] animate-scale-in ${msg.isMine ? 'rounded-br-sm' : 'rounded-bl-sm'}`}>
+                    <div className="rounded-2xl overflow-hidden border-2 border-primary/20 hover-scale cursor-pointer">
+                      <img 
+                        src={msg.imageUrl} 
+                        alt="Shared image" 
+                        className="w-full h-auto max-h-96 object-cover"
+                      />
+                    </div>
+                    <div className={`flex items-center gap-1 justify-end mt-1 px-2 ${msg.isMine ? 'text-primary-foreground opacity-80' : 'text-muted-foreground'}`}>
+                      <span className="text-xs">{msg.time}</span>
+                      {msg.isMine && (
+                        <Icon 
+                          name={msg.status === 'read' ? 'CheckCheck' : 'Check'} 
+                          size={14}
+                          className={msg.status === 'read' ? 'text-accent' : ''}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : msg.type === 'file' ? (
+                  <div
+                    className={`
+                      flex items-center gap-3 rounded-2xl px-4 py-3 min-w-[250px] max-w-[70%] hover-scale cursor-pointer
+                      ${msg.isMine 
+                        ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-br-sm' 
+                        : 'bg-muted text-foreground rounded-bl-sm'
+                      }
+                    `}
+                  >
+                    <div className={`p-3 rounded-xl ${msg.isMine ? 'bg-white/20' : 'bg-primary/20'}`}>
+                      <Icon name={msg.fileIcon as any || 'File'} size={24} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{msg.fileName}</p>
+                      <div className={`flex items-center justify-between text-xs mt-1 ${msg.isMine ? 'opacity-80' : 'opacity-60'}`}>
+                        <span>{msg.fileSize}</span>
+                        <div className="flex items-center gap-1">
+                          <span>{msg.time}</span>
+                          {msg.isMine && (
+                            <Icon 
+                              name={msg.status === 'read' ? 'CheckCheck' : 'Check'} 
+                              size={14}
+                              className={msg.status === 'read' ? 'text-accent' : ''}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Icon name="Download" size={18} className="opacity-60" />
+                  </div>
                 ) : (
                   <div
                     className={`
@@ -465,10 +523,54 @@ const Index = () => {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" className="hover-scale">
-                <Icon name="Paperclip" size={20} />
-              </Button>
+            <div className="flex items-center gap-2 relative">
+              <div className="relative">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="hover-scale"
+                  onClick={() => setShowAttachMenu(!showAttachMenu)}
+                >
+                  <Icon name="Paperclip" size={20} />
+                </Button>
+                
+                {showAttachMenu && (
+                  <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-2xl shadow-lg p-2 animate-scale-in">
+                    <div className="flex flex-col gap-1 min-w-[180px]">
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 hover:bg-muted"
+                        onClick={() => setShowAttachMenu(false)}
+                      >
+                        <div className="p-2 rounded-full bg-accent/20">
+                          <Icon name="Image" size={18} className="text-accent" />
+                        </div>
+                        <span className="text-sm">Фото</span>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 hover:bg-muted"
+                        onClick={() => setShowAttachMenu(false)}
+                      >
+                        <div className="p-2 rounded-full bg-primary/20">
+                          <Icon name="File" size={18} className="text-primary" />
+                        </div>
+                        <span className="text-sm">Файл</span>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 hover:bg-muted"
+                        onClick={() => setShowAttachMenu(false)}
+                      >
+                        <div className="p-2 rounded-full bg-secondary/20">
+                          <Icon name="MapPin" size={18} className="text-secondary" />
+                        </div>
+                        <span className="text-sm">Локация</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
               
               {messageText.trim() ? (
                 <>
